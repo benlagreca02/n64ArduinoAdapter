@@ -15,7 +15,7 @@
 */
 
 
-#define N64_PIN 7
+#define N64_PIN 2 // Pin 2 and 3 are interrupt pins
 // only works on digital pins [0-7]
 // this is how the data will be sent
 // DDRD is the [D]ata [D]irection [R]egister for port [D]
@@ -48,7 +48,7 @@
 	_delay_us(3);\
 }
 
-#define N64_POLL(n){\
+#define N64_SEND_POLL(n){\
 		N64_0(N64_PIN);\
 		N64_0(N64_PIN);\
 		N64_0(N64_PIN);\
@@ -59,48 +59,65 @@
 		N64_1(N64_PIN);\
 		N64_1(N64_PIN);\
 }
+
+
+
+#define NUM_REC_BITS 31
+
+char volatile rawData[NUM_REC_BITS];  // all 32 bits
+char volatile *arrPtr;
+int  volatile counter = 0;
+
+// When there is a falling edge:
+//		wait 2 us
+//		read and store value at arrPtr
+//		increment counter and arrPtr
+void fallingISR(){
+
+	// We just got a falling edge!
+//  arrPtr++;
+  _delay_us(1);
+  *arrPtr = N64_READ(N64_PIN);  
+  counter++;
+}
+
 
 void setup() { 	
-	Serial.begin(9600);
+	//Serial.begin(115200);
+	//Serial.println("uhhh");
+	// wow thats a long name
+	attachInterrupt(digitalPinToInterrupt(N64_PIN), fallingISR, FALLING);
+  //Serial.println("Ok ISR attached, lets start cooking");
 }
 
-char rawData[33];  // all 32 bits
-char *arrPtr = rawData;
-#define NUM_REC_BITS 33
-uint8_t  counter = 0;
+
+
 
 void loop() {
-  *arrPtr = rawData;
-  counter = 0;
-  
-  // watcho jet
-  _delay_us(500);
-  
-  // request data
-  N64_POLL(N64_PIN);
+    arrPtr = rawData;
+    counter = 0;
+
+	// watcho jet
+	_delay_us(500);
+
+	// request data
+	noInterrupts();
+	N64_SEND_POLL(N64_PIN);
+	interrupts();
 	// quick! read the data!
-	
-	while(1){
-		// detect falling edge
-    while((N64_READ(N64_PIN))){}
-    _delay_us(2);
-		*arrPtr = N64_READ(N64_PIN); //read the value
-    arrPtr++;                    // move to next item in array
-    counter++;
-	  if(counter >= NUM_REC_BITS) break;
-	}
- 
-// HYWH YWH YWHYWHWYHWYW
-    while(1){}
-
-
+  do{}while(counter < NUM_REC_BITS);
   
-//  Serial.println();
-//  for(uint8_t i = 0; i < sizeof(rawData); i++){
-//    Serial.print(i);
-//    Serial.print("  | ");
-//    if(rawData[i]){Serial.println("1");}
-//    else{Serial.println("0");}
-//  }
+
+  //Serial.println("Done!");
+  Serial.begin(115200);
+	for(uint8_t i = 0; i < sizeof(rawData); i++){
+		Serial.print(i);
+		Serial.print("  | ");
+		if(rawData[i]){Serial.println("1");}
+		else{Serial.println("0");}
+	}
+
+
+	while(1){};
 
 }
