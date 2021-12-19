@@ -61,10 +61,10 @@
 }
 
 
-
+// THIS IS HOW MANY BITS TO RECIEVE
 #define NUM_REC_BITS 31
 
-char volatile rawData[NUM_REC_BITS];  // all 32 bits
+char rawData[NUM_REC_BITS];  // all 32 bits
 char volatile *arrPtr;
 int  volatile counter = 0;
 
@@ -72,25 +72,22 @@ int  volatile counter = 0;
 //		wait 2 us
 //		read and store value at arrPtr
 //		increment counter and arrPtr
-void fallingISR(){
-
-	// We just got a falling edge!
+//void fallingISR(){
+//
+//	// We just got a falling edge!
+//
+//  _delay_us(1);
+//
+//  *arrPtr = N64_READ(N64_PIN);  
 //  arrPtr++;
-  _delay_us(1);
-  *arrPtr = N64_READ(N64_PIN);  
-  counter++;
-}
-
+//  counter++;
+//
+//}
 
 void setup() { 	
-	//Serial.begin(115200);
-	//Serial.println("uhhh");
-	// wow thats a long name
-	attachInterrupt(digitalPinToInterrupt(N64_PIN), fallingISR, FALLING);
-  //Serial.println("Ok ISR attached, lets start cooking");
+	// wow thats a long line
+	//attachInterrupt(digitalPinToInterrupt(N64_PIN), fallingISR, FALLING);
 }
-
-
 
 
 void loop() {
@@ -101,23 +98,33 @@ void loop() {
 	_delay_us(500);
 
 	// request data
-	noInterrupts();
+  noInterrupts();
+  cli();
 	N64_SEND_POLL(N64_PIN);
-	interrupts();
 	// quick! read the data!
-  do{}while(counter < NUM_REC_BITS);
   
+  while(true){
+    // if the line is LOW, wait 2 us and read,
+    if(!N64_READ(N64_PIN)){
+      _delay_us(1.5);
+      *arrPtr = N64_READ(N64_PIN);
+      arrPtr++;
+      counter++;
+    }
+    if(counter > NUM_REC_BITS) break;
+  }
 
-  //Serial.println("Done!");
+  sei();
+  interrupts();
+ 
+  Serial.println("Done!");
+  Serial.println(NUM_REC_BITS);
   Serial.begin(115200);
-	for(uint8_t i = 0; i < sizeof(rawData); i++){
+	for(uint8_t i = 0; i < NUM_REC_BITS; i++){
 		Serial.print(i);
 		Serial.print("  | ");
 		if(rawData[i]){Serial.println("1");}
 		else{Serial.println("0");}
 	}
-
-
-	while(1){};
 
 }
