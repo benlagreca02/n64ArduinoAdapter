@@ -62,24 +62,24 @@
 
 
 // THIS IS HOW MANY BITS TO RECIEVE
-#define NUM_REC_BITS 31
+#define NUM_REC_BITS 32
 
 char rawData[NUM_REC_BITS];  // all 32 bits
-char volatile *arrPtr;
+char volatile *rawArrPtr;
 int  volatile counter = 0;
 
 // When there is a falling edge:
 //		wait 2 us
-//		read and store value at arrPtr
-//		increment counter and arrPtr
+//		read and store value at rawArrPtr
+//		increment counter and rawArrPtr
 //void fallingISR(){
 //
 //	// We just got a falling edge!
 //
 //  _delay_us(1);
 //
-//  *arrPtr = N64_READ(N64_PIN);  
-//  arrPtr++;
+//  *rawArrPtr = N64_READ(N64_PIN);  
+//  rawArrPtr++;
 //  counter++;
 //
 //}
@@ -91,7 +91,7 @@ void setup() {
 
 
 void loop() {
-    arrPtr = rawData;
+    rawArrPtr = rawData;
     counter = 0;
 
 	// watcho jet
@@ -107,8 +107,8 @@ void loop() {
     // if the line is LOW, wait 2 us and read,
     if(!N64_READ(N64_PIN)){
       _delay_us(1.5);
-      *arrPtr = N64_READ(N64_PIN);
-      arrPtr++;
+      *rawArrPtr = N64_READ(N64_PIN);
+      rawArrPtr++;
       counter++;
     }
     if(counter > NUM_REC_BITS) break;
@@ -116,7 +116,7 @@ void loop() {
 
   sei();
   interrupts();
- 
+  delay(10);
   Serial.println("Done!");
   Serial.println(NUM_REC_BITS);
   Serial.begin(115200);
@@ -126,5 +126,7 @@ void loop() {
 		if(rawData[i]){Serial.println("1");}
 		else{Serial.println("0");}
 	}
+
+  while(true);
 
 }
