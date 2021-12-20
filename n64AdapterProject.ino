@@ -1,3 +1,12 @@
+/* Much inspiration was taken from this project
+* https://www.instructables.com/Use-an-Arduino-with-an-N64-controller/
+* I STRONGLY disliked the mixed C and assembly, along with the labels and GOTO's
+*  and figured there *must* be a way to complete this without those
+*  
+*  I also tied a 1.5k pullup resistor to the data line...
+*  I don't know if this is hurting anything
+*  
+*/
 
 /*
 * 
@@ -5,35 +14,42 @@
 * all data ENDS with a HIGH
 *	DATA ENCODING
 *	us| 0 1 2 3
-*   --------------
-*	 0| 0 0 0 1
-*	 1| 0 1 1 1
+* ----------------
+*	0 | 0 0 0 1
+*	1 | 0 1 1 1
 *
 *  POLL: 0b0 0000 0011
-*  ANSR: 32bits + 1 end bit ( i think)
+*  ANSR: 32bits + 0001*...
 *
 */
 
 
-#define N64_PIN 2 // Pin 2 and 3 are interrupt pins
+
+
+
+#define EXPECTED_BITS_RETURNED 32
+#define N64_PIN 2
 // only works on digital pins [0-7]
 // this is how the data will be sent
 // DDRD is the [D]ata [D]irection [R]egister for port [D]
-// By setting a bit, it is set to OUTPUT, clear -> INPUT
+// By setting a bit inteh DDR, it is set to OUTPUT, clear -> INPUT
+//
 // The n64 only *really* cares about LOW pulses as the
 //		controller has a pullup resistor to 3.3v
 // By setting a pin to INPUT, the arduino shorts it to ground (0)
-// By setting a pin to OUTPUT, the arduino lets it drift (i think)
-//		and it gets pulled by the pullup resistor(?)
-// i.e. INPUT -> n64 0, OUTPUT -> n64 1
+// By setting a pin to OUTPUT, the arduino lets it get pulled up(i think)
+// i.e. INPUT -> low signal , OUTPUT -> high signal
 #define SET_DDRD(n) DDRD |= 1 << n
 #define CLR_DDRD(n) DDRD &= ~(1 << n)
 #define N64_CLR(n) SET_DDRD(n)
 #define N64_SET(n) CLR_DDRD(n)
+
 #define N64_READ(n) (PIND & 1<<n)
 
+// 1 us per 1 or 0
 // 1 -> 0111
 // 0 -> 0001
+
 #define N64_0(n) {\
 	N64_CLR(n);\
 	_delay_us(3);\
@@ -61,72 +77,36 @@
 }
 
 
-// THIS IS HOW MANY BITS TO RECIEVE
-#define NUM_REC_BITS 32
 
-char rawData[NUM_REC_BITS];  // all 32 bits
-char volatile *rawArrPtr;
-int  volatile counter = 0;
 
-// When there is a falling edge:
-//		wait 2 us
-//		read and store value at rawArrPtr
-//		increment counter and rawArrPtr
-//void fallingISR(){
-//
-//	// We just got a falling edge!
-//
-//  _delay_us(1);
-//
-//  *rawArrPtr = N64_READ(N64_PIN);  
-//  rawArrPtr++;
-//  counter++;
-//
-//}
+void setup() {}
 
-void setup() { 	
-	// wow thats a long line
-	//attachInterrupt(digitalPinToInterrupt(N64_PIN), fallingISR, FALLING);
-}
 
+char rawData[EXPECTED_BITS_RETURNED];  // all 32 bits
+char *rawArrPtr;
+int bitsRecieved = 0;
 
 void loop() {
     rawArrPtr = rawData;
-    counter = 0;
-
-	// watcho jet
-	_delay_us(500);
+    bitsRecieved = 0;
 
 	// request data
   noInterrupts();
   cli();
 	N64_SEND_POLL(N64_PIN);
 	// quick! read the data!
-  
   while(true){
     // if the line is LOW, wait 2 us and read,
     if(!N64_READ(N64_PIN)){
       _delay_us(1.5);
       *rawArrPtr = N64_READ(N64_PIN);
       rawArrPtr++;
-      counter++;
+      bitsRecieved++;
     }
-    if(counter > NUM_REC_BITS) break;
+    if(bitsRecieved > EXPECTED_BITS_RETURNED) break;
   }
 
   sei();
   interrupts();
-  delay(10);
-  Serial.println("Done!");
-  Serial.println(NUM_REC_BITS);
-  Serial.begin(115200);
-	for(uint8_t i = 0; i < NUM_REC_BITS; i++){
-		Serial.print(i);
-		Serial.print("  | ");
-		if(rawData[i]){Serial.println("1");}
-		else{Serial.println("0");}
-	}
-
-  while(true);
-
+  
 }
