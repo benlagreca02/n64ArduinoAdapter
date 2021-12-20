@@ -1,5 +1,6 @@
 # Nintendo 64  Controller Adapter
 A small project to use an arduino to interpret the data from a nintendo 64 controller, and emulate a typical USB controller.
+
 **NOTE:** This is still a work in progress as of 12/20/21.
 I am hoping to get this project finished before I return to school for the spring at the latest.
 
