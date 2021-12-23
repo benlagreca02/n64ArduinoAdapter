@@ -18,7 +18,6 @@ These  are both great projects, however I personally find mixed C and assembly *
 I attempted to create code that would follow as many good programming practices as possible, while remaining fast enough to keep up with the blazing speed of a Nintendo 64.
 ## Challenges
 Ironically, the modern arduino has quite a hard time keeping up with the Nintendo 64 at first.
-The controller's data line is burning by with data going at the microsecond rate. 
 A full understanding of the arduino's functions and what goes on "under the hood" is necessary to fully understand what is happening.
 The data direction registers and status registers were used directly, as the `digitalRead()` and `digitalWrite()` functions have so much padding, and "saftey" precautions, that they are too slow to keep up with the 25 year old controller.
 I challenged myself to not use any mixed C and assembly, as I knew it would be possible.
