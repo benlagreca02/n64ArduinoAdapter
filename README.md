@@ -1,11 +1,7 @@
 # Nintendo 64  Controller Adapter
 A small project to use a pair of common Arduinos (Pro-micro, and Uno) to interpret the data from a Nintendo 64 controller, and emulate a generic USB gamepad.
 
-**NOTE:** This is still a work in progress
-
-## Motivation
-I wanted to use a real N64 controller when playing emulators.
-I could've bought a 3rd party adapter, but thats no fun.
+**NOTE:** This is still a work in progress, as joystick data isn't being read properly. I'm assuming its a timing issue, but I haven't gotten around to fully debugging this problem. Assuming it is a timing issue, I could just buy a faster arduino, or possibly replace the whole system with a rasberry pi pico. That would be the "end goal": to have it on one board.
 
 ## Approach
 This had been done before with a [library to interpret N64 controller data](https://www.arduino.cc/reference/en/libraries/n64controller/) which I didn't know existed at the time of starting this project.
